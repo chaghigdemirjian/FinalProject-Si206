@@ -73,6 +73,10 @@ def get_google_data(place, type, keyword=""): #insert city object in here? - act
 #get name, ratings for each place
 #crawl to the next poge (like UMSI) to get the next page info
 #create dict and cache and call update database
+
+
+#insert into this the names of retaurants found by google in specific location to make API calls
+#from Yelp API calls, see what matches names from google calls, and use those to populate database
 def get_yelp_data(place, type, keyword=""):
     location = place #need to ensure a specific format for place #ask for city and state two letter abbreviation
     type = type
