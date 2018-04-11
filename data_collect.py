@@ -1,11 +1,9 @@
+# from create_dbs import *
 import requests
-# from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 import json
-
-from requests_oauthlib import OAuth1Session
+from requests_oauthlib import OAuth2Session
 import secrets
-import operator
-import csv
 import sqlite3
 
 GOOGLE_CACHE_FILE = "google_info"
@@ -16,15 +14,16 @@ GOOGLE_TBL = 'Google'
 YELP_TBL = 'Yelp'
 OPEN_TBL = 'OpenTable'
 
-####Functions
-#get data from yelp, google, open table
-#cache data from all sources (write function that either starts a new cache or updates one)
-#populate yelp, google, open table
+
+
+####Action Items
+ #Type / keyword (what if you want to search a bar? in that case, you would only need type = bar). Do some research on how search engines are responding
+
 #analysis functions: user enteres city (STATE) and restaurant type
     #what typs of analysis will you provide?
 #plotly
 
-def get_google_data(place, type, keyword): #insert city object in here? - actually not sure how objects would be useful
+def get_google_data(place, type, keyword=""): #insert city object in here? - actually not sure how objects would be useful
     place = place #need to ensure a specific format for place #ask for city and state two letter abbreviation
     type = type
     keyword = keyword
@@ -59,12 +58,42 @@ def get_google_data(place, type, keyword): #insert city object in here? - actual
         restaurant_by_city[key] = restaurant_dict_list
         cache_this(key,restaurant_by_city, GOOGLE_CACHE_FILE)
         Update_table(restaurant_by_city[key], GOOGLE_TBL)
+        get_yelp_data(place, type, keyword="")
 
         return None
 
     else:
         print("THIS DATA IS ALREADY IN CACHE SO IT SHOULD BE IN DATABSE")
         ####MAYBE DELETE THE ELSE PART
+
+# Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l
+
+
+#scrape yelp - input place, type, keyword, in search request (place ex. = Ann Arbor. MI)
+#get name, ratings for each place
+#crawl to the next poge (like UMSI) to get the next page info
+#create dict and cache and call update database
+def get_yelp_data(place, type, keyword=""):
+    location = place #need to ensure a specific format for place #ask for city and state two letter abbreviation
+    type = type
+    keyword = keyword
+    term = str(keyword + ", " + type )
+    key = str(place + ", " + type + ", " + keyword) ###could make all keys lowercase
+
+    # oauth = OAuth2Session(API_KEY = YELP_API_Key)"Authorization: Bearer <key>")
+
+    Y1_baseurl = 'https://api.yelp.com/v3/businesses/search'
+    headers = {'Authorization': "Bearer JLoDNWdd_n4NzZbvZlueNFg5ucSuv7OCqTyb1_Q43O3U4pjQIuJoRqZgdgqo8oJkgusjeHmmuB3Y0__Vn4U9i4ljMB9_AAz8Q79KU_G1lTF-u4JMA7S5iMP_RxDNWnYx"}
+    parameters = {'term': term, 'location': location}
+    resp1 = requests.get(Y1_baseurl, headers = headers, params = parameters).text
+    json_resp = json.loads(resp1)['businesses']
+    for r in json_resp:
+        print(r)
+        exit()
+    fw = open(YELP_CACHE_FILE, "w")
+    fw.write(resp1)
+    fw.close()
+
 
 #the following first checks if this location is already in your cache using place as the keyword
 def cache_this(key, new_cache_content, file):
@@ -122,7 +151,7 @@ def create_db(DBNAME):
             'State' TEXT NOT NULL,
             'Type' TEXT NOT NULL,
             'Keyword' TEXT NOT NULL,
-            'Name' INTEGER NOT NULL,
+            'Name' TEXT NOT NULL,
             'Rating' FLOAT NOT NULL
             );
     '''
@@ -140,7 +169,7 @@ def create_db(DBNAME):
             'State' TEXT NOT NULL,
             'Type' TEXT NOT NULL,
             'Keyword' TEXT NOT NULL,
-            'Name' INTEGER NOT NULL,
+            'Name' TEXT NOT NULL,
             'Rating' FLOAT NOT NULL
             );
     '''
@@ -158,7 +187,7 @@ def create_db(DBNAME):
             'State' TEXT NOT NULL,
             'Type' TEXT NOT NULL,
             'Keyword' TEXT NOT NULL,
-            'Name' INTEGER NOT NULL,
+            'Name' TEXT NOT NULL,
             'Rating' FLOAT NOT NULL
             );
     '''
@@ -264,10 +293,14 @@ def Update_table(new_content,TABLE_NAME):
 
 
 if __name__ == "__main__":
+    # get_yelp_data("Dallas, TX", 'restaurant', "indian")
     # create_db(DBNAME)
-    # populate_tables()
     # get_google_data("New York, NY", 'restaurant', "indian")
     # get_google_data("Ann Arbor, MI", 'restaurant', "chinese")
     # get_google_data("Ann Arbor, MI", 'restaurant', "indian")
     # get_google_data("New York, NY", 'restaurant', "chinese")
-    get_google_data("Dallas, TX", 'restaurant', "indian")
+    # get_google_data("Dallas, TX", 'restaurant', "indian")
+    # # get_google_data("San Diego, CA", 'restaurant', "mexican")
+    # get_google_data("San Diego, CA", 'bar', "")
+    get_yelp_data("San Diego, CA", 'restaurant', "indian")
+    # populate_tables()
