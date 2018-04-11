@@ -8,12 +8,9 @@ import sqlite3
 
 GOOGLE_CACHE_FILE = "google_info"
 YELP_CACHE_FILE = "yelp_info"
-OPENTABLE_CACHE_FILE = "opentable_info"
 DBNAME = 'ratings.db'
 GOOGLE_TBL = 'Google'
 YELP_TBL = 'Yelp'
-OPEN_TBL = 'OpenTable'
-
 
 
 ####Action Items
@@ -44,7 +41,7 @@ def get_google_data(place, type, keyword=""): #insert city object in here? - act
 
 
         G2_baseurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-        parameters = {'key':'AIzaSyCA_H7Ht8GzI2RgYfZJeyPLz8O8c0soCig', 'location': location, 'radius': 10000, 'type':type, 'keyword':keyword}
+        parameters = {'key':'AIzaSyCA_H7Ht8GzI2RgYfZJeyPLz8O8c0soCig', 'location': location, 'radius': 40000, 'type':type, 'keyword':keyword}
         resp2 = requests.get(G2_baseurl, parameters).text
         results = json.loads(resp2)
         results = results["results"]
@@ -58,7 +55,6 @@ def get_google_data(place, type, keyword=""): #insert city object in here? - act
         restaurant_by_city[key] = restaurant_dict_list
         cache_this(key,restaurant_by_city, GOOGLE_CACHE_FILE)
         Update_table(restaurant_by_city[key], GOOGLE_TBL)
-        get_yelp_data(place, type, keyword="")
 
         return None
 
@@ -86,17 +82,22 @@ def get_yelp_data(place, type, keyword=""):
 
     # oauth = OAuth2Session(API_KEY = YELP_API_Key)"Authorization: Bearer <key>")
 
+    # Y1_baseurl = 'https://api.yelp.com/v3/businesses/search'
     Y1_baseurl = 'https://api.yelp.com/v3/businesses/search'
     headers = {'Authorization': "Bearer JLoDNWdd_n4NzZbvZlueNFg5ucSuv7OCqTyb1_Q43O3U4pjQIuJoRqZgdgqo8oJkgusjeHmmuB3Y0__Vn4U9i4ljMB9_AAz8Q79KU_G1lTF-u4JMA7S5iMP_RxDNWnYx"}
-    parameters = {'term': term, 'location': location}
+    parameters = {'term': term, 'location': location, 'radius':40000}
     resp1 = requests.get(Y1_baseurl, headers = headers, params = parameters).text
     json_resp = json.loads(resp1)['businesses']
+    restaurant_by_city = {}
+    restaurant_dict_list =  []
+    restaurant_dict = {}
     for r in json_resp:
-        print(r)
-        exit()
-    fw = open(YELP_CACHE_FILE, "w")
-    fw.write(resp1)
-    fw.close()
+        restaurant_dict = {'city':place.split(",")[0].rstrip(), 'state':place.split(",")[1].rstrip(),'type':type,'keyword':keyword,'name':i['name'],'rating':i['rating']}
+        restaurant_dict_list.append(restaurant_dict)
+    restaurant_by_city[key] = restaurant_dict_list
+    cache_this(key,restaurant_by_city, YELP_CACHE_FILE)
+    Update_table(restaurant_by_city[key], GOOGLE_TBL)
+
 
 
 #the following first checks if this location is already in your cache using place as the keyword
@@ -306,5 +307,6 @@ if __name__ == "__main__":
     # get_google_data("Dallas, TX", 'restaurant', "indian")
     # # get_google_data("San Diego, CA", 'restaurant', "mexican")
     # get_google_data("San Diego, CA", 'bar', "")
-    get_yelp_data("San Diego, CA", 'restaurant', "indian")
+    # get_yelp_data("Ann Arbor, MI", 'restaurant', "indian")
+    get_google_data("Ann Arbor, MI", 'restaurant', "madras masala")
     # populate_tables()
