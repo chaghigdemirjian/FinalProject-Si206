@@ -20,9 +20,9 @@ YELP_TBL = 'Yelp'
     #what typs of analysis will you provide?
 #plotly
 
-def get_google_data(city, state, type = 'restaurant', keyword): #insert city object in here? - actually not sure how objects would be useful
+def get_google_data(city, state, type, keyword): #insert city object in here? - actually not sure how objects would be useful
     place = str(city + ", " + state) #need to ensure a specific format for place #ask for city and state two letter abbreviation
-    type = type
+    type = 'restaurant'
     keyword = keyword
     key = str(place + ", " + type + ", " + keyword) ###could make all keys lowercase
 
@@ -72,9 +72,9 @@ def get_google_data(city, state, type = 'restaurant', keyword): #insert city obj
 
 #insert into this the names of retaurants found by google in specific location to make API calls
 #from Yelp API calls, see what matches names from google calls, and use those to populate database
-def get_yelp_data(city, state, type = 'restaurant', keyword):
+def get_yelp_data(city, state, type, keyword):
     location = str(city + ", " + state) #need to ensure a specific format for place #ask for city and state two letter abbreviation
-    type = type
+    type = 'restaurant'
     keyword = keyword
     term = str(keyword + ", " + type )
     key = str(place + ", " + type + ", " + keyword) ###could make all keys lowercase
@@ -251,6 +251,8 @@ def Update_table(new_content,TABLE_NAME):
         conn.commit()
     conn.close()
 
+
+
 def interactive_stuff():
     print('Greetings! This program will allow you to explore 3 different types of restaurant options in a city and state of your choice!')
     print('*'*25)
@@ -276,30 +278,19 @@ def interactive_stuff():
             count += 1
         rest_opt = input("Input three options here: ")
         ###parse user input
-        city = user_input.split(",")[0]
-        state = user_input.split(",")[1]
-        type1 = rest_opt.split(",")[0]
-        type2 = rest_opt.split(",")[1]
-        type3 = rest_opt.split(",")[2]
-        print(city, state, )
+        city = user_input.split(",")[0].strip()
+        state = user_input.split(",")[1].strip()
+        type1 = rest_opt.split(",")[0].strip()
+        type2 = rest_opt.split(",")[1].strip()
+        type3 = rest_opt.split(",")[2].strip()
+
+        function_calls(city, state, typ1, type2, type3)
 
 
 
 if __name__ == "__main__":
     interactive_stuff()
-    ### Need to empty cache files and update them so that both Google and Yelp have the same info
-
-    # get_yelp_data("Dallas, TX", 'restaurant', "indian")
     # create_db(DBNAME)
     # get_google_data("New York, NY", 'restaurant', "indian")
-    # get_google_data("Ann Arbor, MI", 'restaurant', "chinese")
-    # get_google_data("Northville, MI", 'restaurant', "mediterranean")
-    # get_yelp_data("Los Angeles, CA", 'restaurant', "mexican")
-    # get_google_data("Ann Arbor, MI", 'restaurant', "indian")
-    # get_google_data("New York, NY", 'restaurant', "chinese")
-    # get_google_data("Dallas, TX", 'restaurant', "indian")
-    # # get_google_data("San Diego, CA", 'restaurant', "mexican")
-    # get_google_data("San Diego, CA", 'bar', "")
-    # get_yelp_data("Ann Arbor, MI", 'restaurant', "indian")
-    # get_google_data("Ann Arbor, MI", 'restaurant', "madras masala")
+    # get_yelp_data("New York, NY", 'restaurant', "indian")
     # populate_tables()
