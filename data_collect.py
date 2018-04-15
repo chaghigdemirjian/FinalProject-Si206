@@ -20,12 +20,11 @@ YELP_TBL = 'Yelp'
     #what typs of analysis will you provide?
 #plotly
 
-def get_google_data(city, state, type, keyword): #insert city object in here? - actually not sure how objects would be useful
+def get_google_data(city, state, keyword): #insert city object in here? - actually not sure how objects would be useful
     place = str(city + ", " + state) #need to ensure a specific format for place #ask for city and state two letter abbreviation
-    type = 'restaurant'
     keyword = keyword
-    key = str(place + ", " + type + ", " + keyword) ###could make all keys lowercase
-
+    key = str(place + ", " +  keyword)
+    # key = str(place + ", " + type + ", " + keyword)
     cache_try = get_cached_data(key, GOOGLE_CACHE_FILE)
 
     if cache_try == None:
@@ -41,7 +40,7 @@ def get_google_data(city, state, type, keyword): #insert city object in here? - 
 
 
         G2_baseurl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-        parameters = {'key':'AIzaSyCA_H7Ht8GzI2RgYfZJeyPLz8O8c0soCig', 'location': location, 'radius': 40000, 'type':type, 'keyword':keyword}
+        parameters = {'key':'AIzaSyCA_H7Ht8GzI2RgYfZJeyPLz8O8c0soCig', 'location': location, 'radius': 40000, 'type':'restaurant', 'keyword':keyword}
         resp2 = requests.get(G2_baseurl, parameters).text
         results = json.loads(resp2)
         results = results["results"]
@@ -58,9 +57,9 @@ def get_google_data(city, state, type, keyword): #insert city object in here? - 
 
         return None
 
-    else:
-        print("THIS DATA IS ALREADY IN CACHE SO IT SHOULD BE IN DATABSE")
-        ####MAYBE DELETE THE ELSE PART
+    # else:
+    #     print("THIS DATA IS ALREADY IN CACHE SO IT SHOULD BE IN DATABSE")
+    #     ####MAYBE DELETE THE ELSE PART
 
 # Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l
 
@@ -72,12 +71,12 @@ def get_google_data(city, state, type, keyword): #insert city object in here? - 
 
 #insert into this the names of retaurants found by google in specific location to make API calls
 #from Yelp API calls, see what matches names from google calls, and use those to populate database
-def get_yelp_data(city, state, type, keyword):
+def get_yelp_data(city, state, keyword):
     location = str(city + ", " + state) #need to ensure a specific format for place #ask for city and state two letter abbreviation
-    type = 'restaurant'
     keyword = keyword
     term = str(keyword + ", " + type )
-    key = str(place + ", " + type + ", " + keyword) ###could make all keys lowercase
+    key = str(place + ", " +  keyword) ###could make all keys lowercase
+    # key = str(place + ", " + type + ", " + keyword)
 
 
     Y1_baseurl = 'https://api.yelp.com/v3/businesses/search'
@@ -89,13 +88,13 @@ def get_yelp_data(city, state, type, keyword):
     restaurant_dict_list =  []
     restaurant_dict = {}
     for i in json_resp:
-        restaurant_dict = {'city':place.split(",")[0].rstrip(), 'state':place.split(",")[1].rstrip(),'type':type,'keyword':keyword,'name':i['name'],'rating':i['rating']}
+        restaurant_dict = {'city':place.split(",")[0].rstrip(), 'state':place.split(",")[1].rstrip(),'type':'restaurant','keyword':keyword,'name':i['name'],'rating':i['rating']}
         restaurant_dict_list.append(restaurant_dict)
     restaurant_by_city[key] = restaurant_dict_list
     cache_this(key,restaurant_by_city, YELP_CACHE_FILE)
     Update_table(restaurant_by_city[key], YELP_TBL)
 
-#the following first checks if this location is already in your cache using place as the keyword
+
 def cache_this(key, new_cache_content, file):
     try:
         print("caching new things")
@@ -251,6 +250,13 @@ def Update_table(new_content,TABLE_NAME):
         conn.commit()
     conn.close()
 
+def function_calls(city, state, type1, type2, type3):
+    get_yelp_data(city, state, type1)
+    get_yelp_data(city, state, type2)
+    get_yelp_data(city, state, type3)
+    get_google_data(city, state, type1)
+    get_google_data(city, state, type2)
+    get_google_data(city, state, type3)
 
 
 def interactive_stuff():
@@ -283,14 +289,15 @@ def interactive_stuff():
         type1 = rest_opt.split(",")[0].strip()
         type2 = rest_opt.split(",")[1].strip()
         type3 = rest_opt.split(",")[2].strip()
-
         function_calls(city, state, typ1, type2, type3)
 
 
-
 if __name__ == "__main__":
-    interactive_stuff()
     # create_db(DBNAME)
+
+    ##need to add except statements here in case there isn't any data in cache file
+    # populate_tables()
+
+    # interactive_stuff()
     # get_google_data("New York, NY", 'restaurant', "indian")
     # get_yelp_data("New York, NY", 'restaurant', "indian")
-    # populate_tables()
