@@ -48,7 +48,7 @@ def get_google_data(city, state, keyword): #insert city object in here? - actual
         restaurant_dict_list =  []
         restaurant_dict = {}
         for i in results:
-            restaurant_dict = {'city':place.split(",")[0].rstrip(), 'state':place.split(",")[1].rstrip(),'type':type,'keyword':keyword,'name':i['name'],'rating':i['rating']}
+            restaurant_dict = {'city':city, 'state':state,'type':type,'keyword':keyword,'name':i['name'],'rating':i['rating']}
             # restaurant_dict = {'city':place.split()[0], 'state':place.split()[1],'type':type,'keyword':keyword,'name':i['name'],'lat':round(i['geometry']['location']['lat'],1), 'long': round(i['geometry']['location']['lng'],1), 'rating':i['rating']}
             restaurant_dict_list.append(restaurant_dict)
         restaurant_by_city[key] = restaurant_dict_list
@@ -74,8 +74,8 @@ def get_google_data(city, state, keyword): #insert city object in here? - actual
 def get_yelp_data(city, state, keyword):
     location = str(city + ", " + state) #need to ensure a specific format for place #ask for city and state two letter abbreviation
     keyword = keyword
-    term = str(keyword + ", " + type )
-    key = str(place + ", " +  keyword) ###could make all keys lowercase
+    term = str(keyword + ", restaurant")
+    key = str(location + ", " +  keyword) ###could make all keys lowercase
     # key = str(place + ", " + type + ", " + keyword)
 
 
@@ -88,7 +88,7 @@ def get_yelp_data(city, state, keyword):
     restaurant_dict_list =  []
     restaurant_dict = {}
     for i in json_resp:
-        restaurant_dict = {'city':place.split(",")[0].rstrip(), 'state':place.split(",")[1].rstrip(),'type':'restaurant','keyword':keyword,'name':i['name'],'rating':i['rating']}
+        restaurant_dict = {'city':city, 'state':state,'type':'restaurant','keyword':keyword,'name':i['name'],'rating':i['rating']}
         restaurant_dict_list.append(restaurant_dict)
     restaurant_by_city[key] = restaurant_dict_list
     cache_this(key,restaurant_by_city, YELP_CACHE_FILE)
@@ -250,16 +250,19 @@ def Update_table(new_content,TABLE_NAME):
         conn.commit()
     conn.close()
 
-def function_calls(city, state, type1, type2, type3):
-    get_yelp_data(city, state, type1)
-    get_yelp_data(city, state, type2)
-    get_yelp_data(city, state, type3)
-    get_google_data(city, state, type1)
-    get_google_data(city, state, type2)
-    get_google_data(city, state, type3)
+def function_calls(city, state, company, type1, type2, type3):
+    if company.lower() == "google":
+        get_google_data(city, state, type1)
+        get_google_data(city, state, type2)
+        get_google_data(city, state, type3)
+    else:
+        get_yelp_data(city, state, type1)
+        get_yelp_data(city, state, type2)
+        get_yelp_data(city, state, type3)
 
 
 def interactive_stuff():
+    create_db(DBNAME)
     print('Greetings! This program will allow you to explore 3 different types of restaurant options in a city and state of your choice!')
     print('*'*25)
     user_input = ""
@@ -284,20 +287,22 @@ def interactive_stuff():
             count += 1
         rest_opt = input("Input three options here: ")
         ###parse user input
+        company = input("Would you like us to see Google or Yelp data? (please type 'Google' or 'Yelp')")
+
         city = user_input.split(",")[0].strip()
         state = user_input.split(",")[1].strip()
         type1 = rest_opt.split(",")[0].strip()
         type2 = rest_opt.split(",")[1].strip()
         type3 = rest_opt.split(",")[2].strip()
-        function_calls(city, state, typ1, type2, type3)
+        function_calls(city, state, company, type1, type2, type3)
 
 
 if __name__ == "__main__":
     # create_db(DBNAME)
-
+    # interactive_stuff()
     ##need to add except statements here in case there isn't any data in cache file
     # populate_tables()
 
     # interactive_stuff()
-    # get_google_data("New York, NY", 'restaurant', "indian")
+    get_google_data("Ann Arbor, MI", 'restaurant', "indian")
     # get_yelp_data("New York, NY", 'restaurant', "indian")
