@@ -5,6 +5,8 @@ import json
 from requests_oauthlib import OAuth2Session
 import secrets
 import sqlite3
+import plotly.plotly as py
+import plotly.graph_objs as go
 
 GOOGLE_CACHE_FILE = "google_info"
 YELP_CACHE_FILE = "yelp_info"
@@ -187,9 +189,8 @@ def populate_tables(): #(takes list of dictionaries) (without the key- because t
     contents_json = json.loads(contents)
     fw.close()
 
-
-    for search in contents_json:
-        for c in contents_json[search]:
+    for x in contents_json:
+        for c in contents_json[x]:
             City = c['city']
             State = c['state']
             Type = c['type']
@@ -200,10 +201,10 @@ def populate_tables(): #(takes list of dictionaries) (without the key- because t
             query = '''INSERT INTO Google Values (?,?,?,?,?,?,?)
             '''
             params = (None, City, State, Type, Keyword, Name, Rating)
-
             conn.execute(query, params)
             conn.commit()
-    conn.close() ##NEED TO REMOVE THIS LATER
+
+     ##NEED TO REMOVE THIS LATER
 
 
     fw = open(YELP_CACHE_FILE, "r")
@@ -211,19 +212,20 @@ def populate_tables(): #(takes list of dictionaries) (without the key- because t
     contents_json = json.loads(contents)
     fw.close()
 
-    for c in contents_json:
-        City = c['city']
-        State = c['state']
-        Type = c['type']
-        Keyword = c['keyword']
-        Name = c['name']
-        Rating = c['rating']
+    for x in contents_json:
+        for c in contents_json[x]:
+            City = c['city']
+            State = c['state']
+            Type = c['type']
+            Keyword = c['keyword']
+            Name = c['name']
+            Rating = c['rating']
 
-        query = '''INSERT INTO Yelp Values (?,?,?,?,?,?,?)
-        '''
-        params = (None, City, State, Type, Keyword, Name, Rating)
-        conn.execute(query, params)
-        conn.commit()
+            query = '''INSERT INTO Yelp Values (?,?,?,?,?,?,?)
+            '''
+            params = (None, City, State, Type, Keyword, Name, Rating)
+            conn.execute(query, params)
+            conn.commit()
 
     conn.close()
 
@@ -250,7 +252,7 @@ def Update_table(new_content,TABLE_NAME):
         conn.commit()
     conn.close()
 
-def function_calls(city, state, company, type1, type2, type3):
+def data_calls(city, state, company, type1, type2, type3):
     if company.lower() == "google":
         get_google_data(city, state, type1)
         get_google_data(city, state, type2)
@@ -294,15 +296,117 @@ def interactive_stuff():
         type1 = rest_opt.split(",")[0].strip()
         type2 = rest_opt.split(",")[1].strip()
         type3 = rest_opt.split(",")[2].strip()
-        function_calls(city, state, company, type1, type2, type3)
+        data_calls(city, state, company, type1, type2, type3)
 
+        ###here, you would let them know what the options for them are and they can see those options
+
+        output = top_in_cat_query("Ann Arbor", "MI", "Indian", "Yelp", 5)
+        for i in output:
+            print(str(i) + ") " + str(output[i]))
+
+
+
+def quantity_query(city, state, type1, type2, type3, table):
+
+    conn = sqlite3.connect(DBNAME)
+    cur = conn.cursor()
+    query = '''
+        SELECT Keyword, count(*) FROM "{}" as T
+        WHERE T.City == '{}' AND  T.State == '{}'
+        AND T.Keyword in ('{}', '{}', '{}')
+        group by Keyword
+        order by count(*) DESC
+    '''.format(table, city, state, type1, type2, type3)
+
+    print(query)
+    output = cur.execute(query).fetchall()
+    for row in output:
+        print(row)
+
+def average_rating_query(city, state, type1, type2, type3, table):
+
+    conn = sqlite3.connect(DBNAME)
+    cur = conn.cursor()
+    query = '''
+        SELECT Keyword, Round(AVG(Rating),1) FROM "{}" as T
+        WHERE T.City == '{}' AND  T.State == '{}'
+        AND T.Keyword in ('{}', '{}', '{}')
+        group by Keyword
+        order by Round(AVG(Rating),1) DESC
+    '''.format(table, city, state, type1, type2, type3)
+
+    print(query)
+    output = cur.execute(query).fetchall()
+    for row in output:
+        print(row)
+
+def top_in_cat_query(city, state,type, table, limit):
+###Add functionality for top # number or bottom # number
+###or just keep it the way it is?
+    conn = sqlite3.connect(DBNAME)
+    cur = conn.cursor()
+    query = '''
+        SELECT Name FROM "{}" as T
+        WHERE T.City == '{}' AND  T.State == '{}'
+        AND T.Keyword in ('{}')
+        order by Rating DESC
+        limit {}
+    '''.format(table, city, state, type, limit)
+
+    output = cur.execute(query).fetchall()
+    count = 1
+    diction = {}
+    list = []
+    for row in output:
+        # print(str(count) + ") " + str(row[0]))
+        diction[count] = row[0]
+        list.append(diction)
+        count += 1
+    return(diction)
+
+def specific_rest_rating(city, state, type, name, table):
+    conn = sqlite3.connect(DBNAME)
+    cur = conn.cursor()
+    query = '''
+        SELECT Name, Rating FROM "{}" as T
+        WHERE T.City == '{}' AND  T.State == '{}'
+        AND T.Keyword in ('{}')
+        AND T.Name in ('{}')
+    '''.format(table, city, state, type, name)
+
+    output = cur.execute(query).fetchall()
+    for x in output:
+        print(str(x[0]) + ": " + str(x[1]))
+
+
+def plot_number():
+
+    trace0 = go.Scatter(
+        x=["Indian", "Mediterranean", "Mexican"],
+        y=[10, 15, 13]
+    )
+    trace1 = go.Scatter(
+        x=[1, 2, 3, 4],
+        y=[16, 5, 11, 9]
+    )
+    data = go.Data([trace0, trace1])
+
+    py.plot(data, filename = 'basic-line')
 
 if __name__ == "__main__":
     # create_db(DBNAME)
-    # interactive_stuff()
-    ##need to add except statements here in case there isn't any data in cache file
+    get_google_data("New York, NY", 'restaurant', "mexican")
+    # get_yelp_data("Omaha, NE", 'restaurant', "mexican")
     # populate_tables()
+    # plot_number()
+    # quantity_query("Ann Arbor", "MI", "Indian", "German", "Mexican", "Yelp")
+    # average_rating_query("Ann Arbor", "MI", "Indian", "German", "Mexican", "Yelp")
+    # specific_rest_rating("Ann Arbor", "MI", "Indian", "Madras Masala", 'Yelp')
 
     # interactive_stuff()
-    get_google_data("Ann Arbor, MI", 'restaurant', "indian")
+    ##need to add except statements here in case there isn't any data in cache file
+
+
+    # interactive_stuff()
+    # get_google_data("New York, NY", 'restaurant', "mexican")
     # get_yelp_data("New York, NY", 'restaurant', "indian")
